@@ -18,4 +18,6 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, UUID
     boolean existsByDownloadCode(String downloadCode);
 
     List<FileMetadata> findByExpiresAtBefore(LocalDateTime time);
+
+    List<FileMetadata> findByOwnerIdOrderByCreatedAtDesc(UUID ownerId);
 }

@@ -48,6 +48,7 @@ public class FileMetadata {
     @Column(nullable = false)
     private UploadStatus status;
 
-    @Column
-    private UUID ownerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 }
