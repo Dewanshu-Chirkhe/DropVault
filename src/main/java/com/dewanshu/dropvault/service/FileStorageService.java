@@ -23,4 +23,12 @@ public class FileStorageService {
 
         return storedFilename;
     }
+
+    public Path loadFile(String storedFilename) {
+        return STORAGE_PATH.resolve(storedFilename).normalize();
+    }
+
+    public void deleteFile(String storedFilename) throws IOException {
+        Files.deleteIfExists(STORAGE_PATH.resolve(storedFilename));
+    }
 }

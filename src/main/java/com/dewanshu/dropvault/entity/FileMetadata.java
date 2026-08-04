@@ -8,13 +8,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "uploads")
+@Table(name = "file_metadata")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Upload {
+public class FileMetadata {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

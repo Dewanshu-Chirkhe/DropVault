@@ -1,8 +1,8 @@
 package com.dewanshu.dropvault.service;
 
-import com.dewanshu.dropvault.entity.Upload;
+import com.dewanshu.dropvault.entity.FileMetadata;
 import com.dewanshu.dropvault.entity.enums.UploadStatus;
-import com.dewanshu.dropvault.repository.UploadRepository;
+import com.dewanshu.dropvault.repository.FileMetadataRepository;
 import com.dewanshu.dropvault.util.CodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,12 +14,12 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class UploadService {
+public class FileMetadataService {
 
-    private final UploadRepository uploadRepository;
+    private final FileMetadataRepository fileMetadataRepository;
     private final FileStorageService fileStorageService;
 
-    public Upload uploadFile(MultipartFile file) throws IOException {
+    public FileMetadata uploadFile(MultipartFile file) throws IOException {
 
         String code = generateUniqueCode();
 
@@ -35,7 +35,7 @@ public class UploadService {
 
         fileStorageService.saveFile(file, storedFilename);
 
-        Upload upload = Upload.builder()
+        FileMetadata fileMetadata = FileMetadata.builder()
                 .downloadCode(code)
                 .originalFilename(originalFilename)
                 .storedFilename(storedFilename)
@@ -47,7 +47,7 @@ public class UploadService {
                 .status(UploadStatus.ACTIVE)
                 .build();
 
-        return uploadRepository.save(upload);
+        return fileMetadataRepository.save(fileMetadata);
     }
 
     private String generateUniqueCode() {
@@ -56,8 +56,24 @@ public class UploadService {
 
         do {
             code = CodeGenerator.generateCode();
-        } while (uploadRepository.existsByDownloadCode(code));
+        } while (fileMetadataRepository.existsByDownloadCode(code));
 
         return code;
+    }
+
+    public FileMetadata getUpload(String code) {
+
+        FileMetadata fileMetadata = fileMetadataRepository
+                .findByDownloadCodeAndStatus(code, UploadStatus.ACTIVE)
+                .orElseThrow(() -> new RuntimeException("Invalid download code"));
+
+        if (fileMetadata.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("File has expired");
+        }
+
+        fileMetadata.setDownloadCount(fileMetadata.getDownloadCount() + 1);
+        fileMetadataRepository.save(fileMetadata);
+
+        return fileMetadata;
     }
 }
