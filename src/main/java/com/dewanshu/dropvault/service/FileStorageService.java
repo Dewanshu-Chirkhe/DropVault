@@ -1,5 +1,6 @@
 package com.dewanshu.dropvault.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -9,15 +10,21 @@ import java.nio.file.*;
 @Service
 public class FileStorageService {
 
-    private static final Path STORAGE_PATH = Paths.get("storage");
+    private final Path storagePath;
+
+    public FileStorageService(
+            @Value("${storage.location}") String storageLocation
+    ) {
+        this.storagePath = Paths.get(storageLocation);
+    }
 
     public String saveFile(MultipartFile file, String storedFilename) throws IOException {
 
-        if (!Files.exists(STORAGE_PATH)) {
-            Files.createDirectories(STORAGE_PATH);
+        if (!Files.exists(storagePath)) {
+            Files.createDirectories(storagePath);
         }
 
-        Path destination = STORAGE_PATH.resolve(storedFilename);
+        Path destination = storagePath.resolve(storedFilename);
 
         Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
 
@@ -25,10 +32,10 @@ public class FileStorageService {
     }
 
     public Path loadFile(String storedFilename) {
-        return STORAGE_PATH.resolve(storedFilename).normalize();
+        return storagePath.resolve(storedFilename).normalize();
     }
 
     public void deleteFile(String storedFilename) throws IOException {
-        Files.deleteIfExists(STORAGE_PATH.resolve(storedFilename));
+        Files.deleteIfExists(storagePath.resolve(storedFilename));
     }
 }
