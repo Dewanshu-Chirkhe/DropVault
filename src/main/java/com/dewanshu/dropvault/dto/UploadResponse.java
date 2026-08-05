@@ -10,8 +10,6 @@ import java.time.LocalDateTime;
 public class UploadResponse {
 
     private String code;
-
     private String downloadUrl;
-
     private LocalDateTime expiresAt;
 }
