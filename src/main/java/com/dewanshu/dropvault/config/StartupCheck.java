@@ -7,11 +7,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class StartupCheck {
 
-    @Value("${GOOGLE_CLIENT_ID}")
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String clientId;
 
+    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
+    private String clientSecret;
+
     @PostConstruct
-    public void init() {
+    public void check() {
         System.out.println("CLIENT ID = " + clientId);
+        System.out.println("SECRET LENGTH = " + clientSecret.length());
+        System.out.println("SECRET START = " + clientSecret.substring(0, 6));
     }
 }
