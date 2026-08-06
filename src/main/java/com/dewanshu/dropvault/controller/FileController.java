@@ -9,13 +9,17 @@ import com.dewanshu.dropvault.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -58,11 +62,25 @@ public class FileController {
         Resource resource = new UrlResource(path.toUri());
 
         return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(fileMetadata.getMimeType()))
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + fileMetadata.getOriginalFilename() + "\""
                 )
                 .body(resource);
+    }
+
+    private MediaType resolveContentType(Path path) {
+        try {
+            String contentType = Files.probeContentType(path);
+
+            if (contentType != null) {
+                return MediaType.parseMediaType(contentType);
+            }
+        } catch (IOException ignored) {
+        }
+
+        return MediaType.APPLICATION_OCTET_STREAM;
     }
 
     @GetMapping("/my")

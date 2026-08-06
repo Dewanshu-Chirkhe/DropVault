@@ -28,12 +28,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     open-in-view: false
 
     properties:
       hibernate:
         format_sql: true
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
 
 storage:
   location: ${STORAGE_LOCATION:storage}
