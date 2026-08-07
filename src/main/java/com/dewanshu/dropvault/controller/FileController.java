@@ -1,6 +1,7 @@
 package com.dewanshu.dropvault.controller;
 
 import com.dewanshu.dropvault.dto.MyFileResponse;
+import com.dewanshu.dropvault.dto.StorageResponse;
 import com.dewanshu.dropvault.dto.UploadResponse;
 import com.dewanshu.dropvault.entity.FileMetadata;
 import com.dewanshu.dropvault.entity.User;
@@ -109,5 +110,13 @@ public class FileController {
         fileMetadataService.deleteFile(code, user);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/storage")
+    public StorageResponse getStorage(Authentication authentication) {
+
+        User user = (User) authentication.getPrincipal();
+
+        return fileMetadataService.getUserStorage(user);
     }
 }

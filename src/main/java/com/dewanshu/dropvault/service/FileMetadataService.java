@@ -1,5 +1,6 @@
 package com.dewanshu.dropvault.service;
 
+import com.dewanshu.dropvault.dto.StorageResponse;
 import com.dewanshu.dropvault.entity.FileMetadata;
 import com.dewanshu.dropvault.entity.User;
 import com.dewanshu.dropvault.entity.enums.UploadStatus;
@@ -41,6 +42,14 @@ public class FileMetadataService {
 
         if (file.getSize() > maxSize) {
             throw new RuntimeException("File exceeds allowed size.");
+        }
+
+        if (owner != null) {
+            long usedStorage = fileMetadataRepository.getTotalStorageUsed(owner.getId());
+
+            if (usedStorage + file.getSize() > AppConstants.USER_TOTAL_STORAGE) {
+                throw new RuntimeException("Storage limit exceeded. Maximum allowed storage is 2 GB.");
+            }
         }
 
         fileStorageService.saveFile(file, storedFilename);
@@ -111,5 +120,16 @@ public class FileMetadataService {
         fileStorageService.deleteFile(file.getStoredFilename());
 
         fileMetadataRepository.delete(file);
+    }
+
+    public StorageResponse getUserStorage(User user) {
+
+        long usedStorage = fileMetadataRepository.getTotalStorageUsed(user.getId());
+
+        return new StorageResponse(
+                usedStorage,
+                AppConstants.USER_TOTAL_STORAGE,
+                AppConstants.USER_TOTAL_STORAGE - usedStorage
+        );
     }
 }
