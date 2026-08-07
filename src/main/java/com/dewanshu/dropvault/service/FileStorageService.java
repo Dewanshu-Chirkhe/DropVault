@@ -1,41 +1,66 @@
 package com.dewanshu.dropvault.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
-import java.nio.file.*;
+
 
 @Service
+@RequiredArgsConstructor
 public class FileStorageService {
 
-    private final Path storagePath;
+    private final S3Client s3Client;
 
-    public FileStorageService(
-            @Value("${storage.location}") String storageLocation
-    ) {
-        this.storagePath = Paths.get(storageLocation);
-    }
+    @Value("${aws.bucket}")
+    private String bucket;
 
     public String saveFile(MultipartFile file, String storedFilename) throws IOException {
 
-        if (!Files.exists(storagePath)) {
-            Files.createDirectories(storagePath);
-        }
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(storedFilename)
+                .contentType(file.getContentType())
+                .build();
 
-        Path destination = storagePath.resolve(storedFilename);
-
-        Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
+        s3Client.putObject(
+                request,
+                RequestBody.fromInputStream(
+                        file.getInputStream(),
+                        file.getSize()
+                )
+        );
 
         return storedFilename;
     }
 
-    public Path loadFile(String storedFilename) {
-        return storagePath.resolve(storedFilename).normalize();
+    public InputStreamResource loadFile(String storedFilename) {
+
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(storedFilename)
+                .build();
+
+        return new InputStreamResource(
+                s3Client.getObject(request)
+        );
     }
 
-    public void deleteFile(String storedFilename) throws IOException {
-        Files.deleteIfExists(storagePath.resolve(storedFilename));
+    public void deleteFile(String storedFilename) {
+
+        DeleteObjectRequest request = DeleteObjectRequest.builder()
+                .bucket(bucket)
+                .key(storedFilename)
+                .build();
+
+        s3Client.deleteObject(request);
     }
 }

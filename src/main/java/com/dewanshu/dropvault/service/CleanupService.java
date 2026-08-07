@@ -34,7 +34,7 @@ public class CleanupService {
 
                 log.info("Deleted expired file {}", file.getDownloadCode());
 
-            } catch (IOException e) {
+            } catch (software.amazon.awssdk.services.s3.model.S3Exception e) {
                 log.error("Failed to delete {}", file.getStoredFilename(), e);
             }
         }

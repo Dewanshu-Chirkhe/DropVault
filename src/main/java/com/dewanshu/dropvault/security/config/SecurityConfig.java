@@ -63,7 +63,7 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "https://dropvault-lilac.vercel.app/"
+                "https://dropvault-lilac.vercel.app"
         ));
 
         configuration.setAllowedMethods(List.of(
