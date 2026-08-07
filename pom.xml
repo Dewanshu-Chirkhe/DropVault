@@ -145,7 +145,7 @@
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
-		</dependency>1
+		</dependency>
 	</dependencies>
 
 	<build>
