@@ -1,5 +1,6 @@
 package com.dewanshu.dropvault.service;
 
+import com.dewanshu.dropvault.config.StorageProperties;
 import com.dewanshu.dropvault.dto.StorageResponse;
 import com.dewanshu.dropvault.entity.FileMetadata;
 import com.dewanshu.dropvault.entity.User;
@@ -9,7 +10,7 @@ import com.dewanshu.dropvault.util.CodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import com.dewanshu.dropvault.util.AppConstants;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +22,7 @@ public class FileMetadataService {
 
     private final FileMetadataRepository fileMetadataRepository;
     private final FileStorageService fileStorageService;
+    private final StorageProperties storageProperties;
 
     public FileMetadata uploadFile(MultipartFile file, User owner) throws IOException {
 
@@ -37,18 +39,24 @@ public class FileMetadataService {
         String storedFilename = UUID.randomUUID() + extension;
 
         long maxSize = owner == null
-                ? AppConstants.GUEST_MAX_SIZE
-                : AppConstants.USER_MAX_SIZE;
+                ? storageProperties.getGuestMaxSize()
+                : storageProperties.getUserMaxSize();
 
         if (file.getSize() > maxSize) {
             throw new RuntimeException("File exceeds allowed size.");
         }
 
         if (owner != null) {
-            long usedStorage = fileMetadataRepository.getTotalStorageUsed(owner.getId());
 
-            if (usedStorage + file.getSize() > AppConstants.USER_TOTAL_STORAGE) {
-                throw new RuntimeException("Storage limit exceeded. Maximum allowed storage is 2 GB.");
+            long usedStorage =
+                    fileMetadataRepository.getTotalStorageUsed(owner.getId());
+
+            if (usedStorage + file.getSize()
+                    > storageProperties.getUserTotalStorage()) {
+
+                throw new RuntimeException(
+                        "Storage limit exceeded. Maximum allowed storage is 2 GB."
+                );
             }
         }
 
@@ -62,8 +70,10 @@ public class FileMetadataService {
                 .fileSize(file.getSize())
                 .createdAt(LocalDateTime.now())
                 .expiresAt(owner == null
-                        ? LocalDateTime.now().plusHours(AppConstants.GUEST_EXPIRY_HOURS)
-                        : LocalDateTime.now().plusDays(AppConstants.USER_EXPIRY_DAYS)
+                        ? LocalDateTime.now()
+                        .plusHours(storageProperties.getGuestExpiryHours())
+                        : LocalDateTime.now()
+                        .plusDays(storageProperties.getUserExpiryDays())
                 )
                 .downloadCount(0)
                 .status(UploadStatus.ACTIVE)
@@ -88,33 +98,42 @@ public class FileMetadataService {
 
         FileMetadata fileMetadata = fileMetadataRepository
                 .findByDownloadCodeAndStatus(code, UploadStatus.ACTIVE)
-                .orElseThrow(() -> new RuntimeException("Invalid download code"));
+                .orElseThrow(() ->
+                        new RuntimeException("Invalid download code"));
 
         if (fileMetadata.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("File has expired");
         }
 
-        fileMetadata.setDownloadCount(fileMetadata.getDownloadCount() + 1);
+        fileMetadata.setDownloadCount(
+                fileMetadata.getDownloadCount() + 1
+        );
+
         fileMetadataRepository.save(fileMetadata);
 
         return fileMetadata;
     }
 
     public List<FileMetadata> getUserFiles(User user) {
-        return fileMetadataRepository.findByOwnerIdOrderByCreatedAtDesc(user.getId());
+        return fileMetadataRepository
+                .findByOwnerIdOrderByCreatedAtDesc(user.getId());
     }
 
     public void deleteFile(String code, User user) throws IOException {
 
-        FileMetadata file = fileMetadataRepository.findByDownloadCode(code)
-                .orElseThrow(() -> new RuntimeException("File not found"));
+        FileMetadata file = fileMetadataRepository
+                .findByDownloadCode(code)
+                .orElseThrow(() ->
+                        new RuntimeException("File not found"));
 
         if (file.getOwner() == null) {
-            throw new RuntimeException("Guest uploads cannot be deleted.");
+            throw new RuntimeException(
+                    "Guest uploads cannot be deleted.");
         }
 
         if (!file.getOwner().getId().equals(user.getId())) {
-            throw new RuntimeException("You cannot delete someone else's file.");
+            throw new RuntimeException(
+                    "You cannot delete someone else's file.");
         }
 
         fileStorageService.deleteFile(file.getStoredFilename());
@@ -124,12 +143,13 @@ public class FileMetadataService {
 
     public StorageResponse getUserStorage(User user) {
 
-        long usedStorage = fileMetadataRepository.getTotalStorageUsed(user.getId());
+        long usedStorage =
+                fileMetadataRepository.getTotalStorageUsed(user.getId());
 
         return new StorageResponse(
                 usedStorage,
-                AppConstants.USER_TOTAL_STORAGE,
-                AppConstants.USER_TOTAL_STORAGE - usedStorage
+                storageProperties.getUserTotalStorage(),
+                storageProperties.getUserTotalStorage() - usedStorage
         );
     }
 }

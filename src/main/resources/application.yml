@@ -5,8 +5,8 @@ server:
 spring:
   servlet:
     multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
+      max-file-size: 200MB
+      max-request-size: 200MB
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/dropvault}
@@ -37,6 +37,12 @@ spring:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  storage:
+    guest-max-size: ${GUEST_MAX_SIZE:52428800}
+    user-max-size: ${USER_MAX_SIZE:209715200}
+    user-total-storage: ${USER_TOTAL_STORAGE:2147483648}
+    guest-expiry-hours: ${GUEST_EXPIRY_HOURS:24}
+    user-expiry-days: ${USER_EXPIRY_DAYS:7}
 
 aws:
   access-key: ${AWS_ACCESS_KEY_ID}
